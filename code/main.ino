@@ -42,12 +42,13 @@ void loop()
   }
   else if (!gps.speed.isValid() || !gps.course.isValid() || gps.speed.age() > MAX_DATA_AGE_MS || gps.course.age() > MAX_DATA_AGE_MS)
   {
-    printFixStatus();
+    printFixing();
   }
   else
   {
     printSpeed();
     printCourse();
+    displayFixConfidence();
   }
 }
 
@@ -69,7 +70,7 @@ void crash()
     ;
 }
 
-void printFixStatus()
+void printFixing()
 {
   const int intervalMs = 500;
   const char stages = 4;
@@ -92,6 +93,16 @@ void printFixStatus()
     lcd1.print("GPS---");
     break;
   }
+}
+
+void displayFixConfidence()
+{
+  const int satellites = gps.satellites.value();
+
+  // Battery can only be 0, 1, 2, or 3. For 3 or fewer satellites, we don't show anything, so we
+  // indicate from 4 to 9 satellites using both displays.
+  lcd2.setBatteryLevel(min(satellites - 3, 3));
+  lcd1.setBatteryLevel(min(satellites - 6, 3));
 }
 
 void printStartUp()
