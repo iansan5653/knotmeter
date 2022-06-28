@@ -108,5 +108,5 @@ void printCourse()
   if (!gps.course.isUpdated())
     return;
 
-  lcd1.print(gps.course.deg(), "%5li*", 0);
+  lcd2.print(gps.course.deg(), "   %03li", 0);
 }
