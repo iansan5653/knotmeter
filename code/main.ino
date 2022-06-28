@@ -23,14 +23,13 @@ void setup()
 
   lcd1.clear();
   lcd2.clear();
+
+  lcd1.noBacklight();
 }
 
 void loop()
 {
-  lcd1.noBacklight();
-
-  while (ss.available())
-    gps.encode(ss.read());
+  readGps();
 
   if (millis() < 3000)
   {
@@ -50,6 +49,12 @@ void loop()
     printSpeed();
     printCourse();
   }
+}
+
+void readGps()
+{
+  while (ss.available())
+    gps.encode(ss.read());
 }
 
 void printGpsMissing()
@@ -91,8 +96,8 @@ void printFixStatus()
 
 void printStartUp()
 {
-  lcd1.print("SOG");
-  lcd2.print("COG");
+  lcd1.print("HELL0");
+  lcd2.clear();
 }
 
 void printSpeed()
