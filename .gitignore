@@ -1,2 +1,6 @@
 # SOLIDWORKS temporary files
 **/~$*.SLD*
+*.3mf
+*.3MF
+*.stl
+*.STL
