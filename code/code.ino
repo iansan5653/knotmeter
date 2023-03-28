@@ -6,6 +6,7 @@
 static const int GPS_RX_PIN = 6, GPS_TX_PIN = 5;
 static const int DISPLAY1_CS_PIN = 3, DISPLAY1_CLK_PIN = 2, DISPLAY1_DATA_PIN = 4;
 static const int DISPLAY2_CS_PIN = 9, DISPLAY2_CLK_PIN = 8, DISPLAY2_DATA_PIN = 10;
+static const int PHOTORESISTOR_PIN = A4;
 
 static const uint32_t SERIAL_BAUD = 9600;
 static const uint32_t MAX_DATA_AGE_MS = 1500;
@@ -21,22 +22,33 @@ void setup()
 
   display1.shutdown(0, false);
   display1.clearDisplay(0);
-  display1.setIntensity(0, 1);
 
   display2.shutdown(0, false);
   display2.clearDisplay(0);
-  display2.setIntensity(0, 1);
+
+  updateDisplayBrightness();
 }
+
+unsigned long lastBrightnessUpdate = 0;
 
 void loop()
 {
   readGps();
 
-  if (millis() < 3000)
+  const unsigned long now = millis();
+
+  // No need to waste time reading & updating every cycle
+  if (now - lastBrightnessUpdate > 5000)
+  {
+    updateDisplayBrightness();
+    lastBrightnessUpdate = now;
+  }
+
+  if (now < 3000)
   {
     printStartUp();
   }
-  else if (millis() > 5000 && gps.charsProcessed() < 10)
+  else if (now > 5000 && gps.charsProcessed() < 10)
   {
     printGpsMissing();
     crash();
@@ -94,6 +106,7 @@ void printFixing()
 void printStartUp()
 {
   printChars(display1, ' ', 'H', '1'); // HI
+  printChars(display2, ' ', ' ', ' '); // HI
 }
 
 void printSpeed()
@@ -191,4 +204,15 @@ void printFloat(LedControl display, float number)
     display.setDigit(0, 1, tenths, false);
     display.setDigit(0, 2, hundredths, false);
   }
+}
+
+int updateDisplayBrightness()
+{
+  const int ambientLight = analogRead(PHOTORESISTOR_PIN);
+  const int displayIntensity = map(ambientLight, 0, 1024, 15, 0);
+
+  display1.setIntensity(0, displayIntensity);
+  display2.setIntensity(0, displayIntensity);
+
+  return displayIntensity;
 }
