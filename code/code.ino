@@ -1,30 +1,31 @@
 #include <TinyGPSPlus.h>
 #include <SoftwareSerial.h>
-#include <HT1621.h>
+#include <LedControl.h>
+#include <math.h>
 
-static const int GPS_RX_PIN = 5, GPS_TX_PIN = 6;
-static const int LCD1_CS_PIN = 2, LCD1_WR_PIN = 3, LCD1_DATA_PIN = 4;
-static const int LCD2_CS_PIN = 7, LCD2_WR_PIN = 8, LCD2_DATA_PIN = 9;
-static const int LCD_BACKLIGHT_PIN = 12;
+static const int GPS_RX_PIN = 6, GPS_TX_PIN = 5;
+static const int DISPLAY1_CS_PIN = 3, DISPLAY1_CLK_PIN = 2, DISPLAY1_DATA_PIN = 4;
+static const int DISPLAY2_CS_PIN = 9, DISPLAY2_CLK_PIN = 8, DISPLAY2_DATA_PIN = 10;
 
 static const uint32_t SERIAL_BAUD = 9600;
 static const uint32_t MAX_DATA_AGE_MS = 1500;
 
 TinyGPSPlus gps;
 SoftwareSerial ss(GPS_RX_PIN, GPS_TX_PIN);
-HT1621 lcd1;
-HT1621 lcd2;
+LedControl display1(DISPLAY1_DATA_PIN, DISPLAY1_CLK_PIN, DISPLAY1_CS_PIN);
+LedControl display2(DISPLAY2_DATA_PIN, DISPLAY2_CLK_PIN, DISPLAY2_CS_PIN);
 
 void setup()
 {
   ss.begin(SERIAL_BAUD);
-  lcd1.begin(LCD1_CS_PIN, LCD1_WR_PIN, LCD1_DATA_PIN, LCD_BACKLIGHT_PIN);
-  lcd2.begin(LCD2_CS_PIN, LCD2_WR_PIN, LCD2_DATA_PIN);
 
-  lcd1.clear();
-  lcd2.clear();
+  display1.shutdown(0, false);
+  display1.clearDisplay(0);
+  display1.setIntensity(0, 1);
 
-  lcd1.noBacklight();
+  display2.shutdown(0, false);
+  display2.clearDisplay(0);
+  display2.setIntensity(0, 1);
 }
 
 void loop()
@@ -48,7 +49,6 @@ void loop()
   {
     printSpeed();
     printCourse();
-    displayFixConfidence();
   }
 }
 
@@ -60,8 +60,8 @@ void readGps()
 
 void printGpsMissing()
 {
-  lcd1.print("ERROR");
-  lcd2.print("NO GPS");
+  printChars(display1, 'E', 'A', 'A'); // ERR
+  printChars(display2, 'E', 'A', 'A'); // ERR
 }
 
 void crash()
@@ -72,57 +72,108 @@ void crash()
 
 void printFixing()
 {
-  const int intervalMs = 500;
-  const char stages = 4;
-  const char currentStage = (millis() % (intervalMs * stages)) / intervalMs;
-
-  lcd2.print(gps.satellites.value(), 0);
-
-  switch (currentStage)
-  {
-  case 1:
-    lcd1.print("GPS");
-    break;
-  case 2:
-    lcd1.print("GPS-");
-    break;
-  case 3:
-    lcd1.print("GPS--");
-    break;
-  default:
-    lcd1.print("GPS---");
-    break;
-  }
-}
-
-void displayFixConfidence()
-{
-  const int satellites = gps.satellites.value();
-
-  // Battery can only be 0, 1, 2, or 3. For 3 or fewer satellites, we don't show anything, so we
-  // indicate from 4 to 9 satellites using both displays.
-  lcd2.setBatteryLevel(min(satellites - 3, 3));
-  lcd1.setBatteryLevel(min(satellites - 6, 3));
+  printChars(display1, '-', '-', '-'); // FIX
+  printInt(display2, gps.satellites.value());
 }
 
 void printStartUp()
 {
-  lcd1.print("HELL0");
-  lcd2.clear();
+  printChars(display1, ' ', 'H', '1'); // HI
 }
 
 void printSpeed()
 {
-  if (!gps.speed.isUpdated())
-    return;
-
-  lcd1.print(gps.speed.knots(), 2);
+  if (gps.speed.isUpdated())
+    printFloat(display1, gps.speed.knots());
 }
 
 void printCourse()
 {
-  if (!gps.course.isUpdated())
-    return;
+  if (gps.course.isUpdated())
+    printInt(display2, gps.course.deg());
+}
 
-  lcd2.print(gps.course.deg(), "   %03li", 0);
+/**
+ * Supported
+ * '0','1','2','3','4','5','6','7','8','9','0',
+ * 'A','b','c','d','E','F','H','L','P',
+ * '.','-','_',' '
+ */
+void printChars(LedControl display, char char1, char char2, char char3)
+{
+  display.setChar(0, 0, char1, false);
+  display.setChar(0, 1, char2, false);
+  display.setChar(0, 2, char3, false);
+}
+
+void printInt(LedControl display, int number)
+{
+  const int absolute = abs(number);
+  const byte hundreds = absolute / 100;
+  const byte tens = (absolute % 100) / 10;
+  const byte ones = absolute % 10;
+
+  if (absolute > 999)
+  {
+    printChars(display, 'E', 'A', 'A'); // ERR
+  }
+  else if (absolute >= 100)
+  {
+    display.setDigit(0, 0, hundreds, false);
+    display.setDigit(0, 1, tens, false);
+    display.setDigit(0, 2, ones, false);
+  }
+  else if (absolute >= 10)
+  {
+
+    display.setDigit(0, 0, 0, false);
+    display.setDigit(0, 1, tens, false);
+    display.setDigit(0, 2, ones, false);
+  }
+  else
+  {
+
+    display.setDigit(0, 0, 0, false);
+    display.setDigit(0, 1, 0, false);
+    display.setDigit(0, 2, ones, false);
+  }
+}
+
+void printFloat(LedControl display, float number)
+{
+  const float absolute = abs(number);
+
+  const int integer = absolute;
+  const byte hundreds = integer / 100;
+  const byte tens = (integer % 100) / 10;
+  const byte ones = integer % 10;
+
+  const byte decimal = (absolute - integer) * 100;
+  const byte tenths = decimal / 10;
+  const byte hundredths = decimal % 10;
+
+  if (integer > 999)
+  {
+    printChars(display, 'E', 'A', 'A'); // ERR
+  }
+  else if (integer >= 100)
+  {
+    display.setDigit(0, 0, hundreds, false);
+    display.setDigit(0, 1, tens, false);
+    display.setDigit(0, 2, ones, false);
+  }
+  else if (integer >= 10)
+  {
+
+    display.setDigit(0, 0, tens, false);
+    display.setDigit(0, 1, ones, true);
+    display.setDigit(0, 2, tenths, false);
+  }
+  else
+  {
+
+    display.setDigit(0, 0, ones, true);
+    display.setDigit(0, 1, tenths, false);
+    display.setDigit(0, 2, hundredths, false);
+  }
 }
