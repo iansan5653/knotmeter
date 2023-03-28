@@ -12,13 +12,12 @@ static const uint32_t SERIAL_BAUD = 9600;
 static const uint32_t MAX_DATA_AGE_MS = 1500;
 
 TinyGPSPlus gps;
-SoftwareSerial ss(GPS_RX_PIN, GPS_TX_PIN);
 LedControl display1(DISPLAY1_DATA_PIN, DISPLAY1_CLK_PIN, DISPLAY1_CS_PIN);
 LedControl display2(DISPLAY2_DATA_PIN, DISPLAY2_CLK_PIN, DISPLAY2_CS_PIN);
 
 void setup()
 {
-  ss.begin(SERIAL_BAUD);
+  Serial.begin(SERIAL_BAUD);
 
   display1.shutdown(0, false);
   display1.clearDisplay(0);
@@ -66,8 +65,8 @@ void loop()
 
 void readGps()
 {
-  while (ss.available())
-    gps.encode(ss.read());
+  while (Serial.available())
+    gps.encode(Serial.read());
 }
 
 void printGpsMissing()
