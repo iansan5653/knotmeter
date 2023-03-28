@@ -60,8 +60,8 @@ void readGps()
 
 void printGpsMissing()
 {
-  printChars(display1, 'E', 'A', 'A'); // ERR
-  printChars(display2, 'E', 'A', 'A'); // ERR
+  printChars(display1, 'E', ' ', '1');
+  printChars(display2, '-', '-', '-');
 }
 
 void crash()
@@ -72,8 +72,23 @@ void crash()
 
 void printFixing()
 {
-  printChars(display1, '-', '-', '-'); // FIX
-  printInt(display2, gps.satellites.value());
+  const int n = millis() / 500 % 4;
+
+  switch (n)
+  {
+  case (0):
+    printChars(display1, '-', ' ', ' ');
+    break;
+  case (1):
+  case (3):
+    printChars(display1, ' ', '-', ' ');
+    break;
+  case (2):
+    printChars(display1, ' ', ' ', '-');
+    break;
+  }
+
+  printInt(display2, gps.satellites.value(), false);
 }
 
 void printStartUp()
@@ -90,7 +105,7 @@ void printSpeed()
 void printCourse()
 {
   if (gps.course.isUpdated())
-    printInt(display2, gps.course.deg());
+    printInt(display2, gps.course.deg(), true);
 }
 
 /**
@@ -106,12 +121,14 @@ void printChars(LedControl display, char char1, char char2, char char3)
   display.setChar(0, 2, char3, false);
 }
 
-void printInt(LedControl display, int number)
+void printInt(LedControl display, int number, bool leadingZeros)
 {
   const int absolute = abs(number);
   const byte hundreds = absolute / 100;
   const byte tens = (absolute % 100) / 10;
   const byte ones = absolute % 10;
+
+  const char padChar = leadingZeros ? '0' : ' ';
 
   if (absolute > 999)
   {
@@ -125,16 +142,14 @@ void printInt(LedControl display, int number)
   }
   else if (absolute >= 10)
   {
-
-    display.setDigit(0, 0, 0, false);
+    display.setChar(0, 0, padChar, false);
     display.setDigit(0, 1, tens, false);
     display.setDigit(0, 2, ones, false);
   }
   else
   {
-
-    display.setDigit(0, 0, 0, false);
-    display.setDigit(0, 1, 0, false);
+    display.setChar(0, 0, padChar, false);
+    display.setChar(0, 1, padChar, false);
     display.setDigit(0, 2, ones, false);
   }
 }
