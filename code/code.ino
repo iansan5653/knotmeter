@@ -3,7 +3,7 @@
 #include <LedControl.h>
 #include <math.h>
 
-static const int GPS_RX_PIN = 6, GPS_TX_PIN = 5;
+static const int GPS_RX_PIN = 5, GPS_TX_PIN = 6;
 static const int DISPLAY1_CS_PIN = 3, DISPLAY1_CLK_PIN = 2, DISPLAY1_DATA_PIN = 4;
 static const int DISPLAY2_CS_PIN = 9, DISPLAY2_CLK_PIN = 8, DISPLAY2_DATA_PIN = 10;
 static const int PHOTORESISTOR_PIN = A4;
@@ -14,10 +14,11 @@ static const uint32_t MAX_DATA_AGE_MS = 1500;
 TinyGPSPlus gps;
 LedControl display1(DISPLAY1_DATA_PIN, DISPLAY1_CLK_PIN, DISPLAY1_CS_PIN);
 LedControl display2(DISPLAY2_DATA_PIN, DISPLAY2_CLK_PIN, DISPLAY2_CS_PIN);
+SoftwareSerial ss(GPS_RX_PIN, GPS_TX_PIN);
 
 void setup()
 {
-  Serial.begin(SERIAL_BAUD);
+  ss.begin(SERIAL_BAUD);
 
   display1.shutdown(0, false);
   display1.clearDisplay(0);
@@ -43,7 +44,7 @@ void loop()
     lastBrightnessUpdate = now;
   }
 
-  if (now < 3000)
+  if (now < 5000)
   {
     printStartUp();
   }
@@ -65,8 +66,8 @@ void loop()
 
 void readGps()
 {
-  while (Serial.available())
-    gps.encode(Serial.read());
+  while (ss.available())
+    gps.encode(ss.read());
 }
 
 void printGpsMissing()
@@ -105,7 +106,15 @@ void printFixing()
 void printStartUp()
 {
   printChars(display1, ' ', 'H', '1'); // HI
-  printChars(display2, ' ', ' ', ' '); // HI
+
+  const int now = millis();
+
+  if (now <= 1500)
+    printChars(display2, '-', ' ', ' ');
+  else if (now <= 3000)
+    printChars(display2, '-', '-', ' ');
+  else
+    printChars(display2, '-', '-', '-');
 }
 
 void printSpeed()
