@@ -214,13 +214,11 @@ void printFloat(LedControl display, float number)
   }
 }
 
-int updateDisplayBrightness()
+void updateDisplayBrightness()
 {
   const int ambientLight = analogRead(PHOTORESISTOR_PIN);
   const int displayIntensity = map(ambientLight, 0, 1024, 15, 0);
 
   display1.setIntensity(0, displayIntensity);
   display2.setIntensity(0, displayIntensity);
-
-  return displayIntensity;
 }
