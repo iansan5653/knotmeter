@@ -37,7 +37,7 @@ void loop()
 
   const unsigned long now = millis();
 
-  // No need to waste time reading & updating every cycle
+  // No need to waste time reading & updating every cycle - 5 seconds should be good
   if (now - lastBrightnessUpdate > 5000)
   {
     updateDisplayBrightness();
@@ -59,8 +59,8 @@ void loop()
   }
   else
   {
-    printSpeed();
-    printCourse();
+    printCourse(display1);
+    printSpeed(display2);
   }
 }
 
@@ -117,16 +117,16 @@ void printStartUp()
     printChars(display2, '-', '-', '-');
 }
 
-void printSpeed()
+void printSpeed(LedControl display)
 {
   if (gps.speed.isUpdated())
-    printFloat(display1, gps.speed.knots());
+    printFloat(display, gps.speed.knots());
 }
 
-void printCourse()
+void printCourse(LedControl display)
 {
   if (gps.course.isUpdated())
-    printInt(display2, gps.course.deg(), true);
+    printInt(display, gps.course.deg(), true);
 }
 
 /**
