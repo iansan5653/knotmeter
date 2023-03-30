@@ -4,8 +4,8 @@
 #include <math.h>
 
 static const int GPS_RX_PIN = 5, GPS_TX_PIN = 6;
-static const int DISPLAY1_CS_PIN = 3, DISPLAY1_CLK_PIN = 2, DISPLAY1_DATA_PIN = 4;
-static const int DISPLAY2_CS_PIN = 9, DISPLAY2_CLK_PIN = 8, DISPLAY2_DATA_PIN = 10;
+static const int DISPLAY1_CS_PIN = 9, DISPLAY1_CLK_PIN = 8, DISPLAY1_DATA_PIN = 10;
+static const int DISPLAY2_CS_PIN = 3, DISPLAY2_CLK_PIN = 2, DISPLAY2_DATA_PIN = 4;
 static const int PHOTORESISTOR_PIN = A4;
 
 static const uint32_t SERIAL_BAUD = 9600;
